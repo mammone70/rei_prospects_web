@@ -22,7 +22,7 @@ export const AuthContextProvider = ({children}) => {
             navigate("/login", {replace:true});
         }
         try {
-            const res = await fetch('http://localhost:8000/api/me', {
+            const res = await fetch('http://localhost:8000/api/Auth/checkLogin', {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -55,7 +55,7 @@ export const AuthContextProvider = ({children}) => {
     //login request
     const loginUser = async (userData) => {
         try {
-            const res = await fetch('http://localhost:8000/api/login', {
+            const res = await fetch('http://localhost:8000/api/Auth/login', {
                 method: "POST",
                 headers: {
                     "Content-Type":"application/json",
@@ -63,14 +63,14 @@ export const AuthContextProvider = ({children}) => {
                 body: JSON.stringify({...userData}),    
             });
             const result = await res.json();
-            if(!result.error){
-                localStorage.setItem("token", result.token);
-                setUser(result.user);
-                toast.success(`Logged in ${result.user.name}`);
+            if(!result?.data.error){
+                localStorage.setItem("token", result.data.token);
+                setUser(result.data.user);
+                toast.success(`Logged in ${result.data.user.name}`);
 
                 navigate("/", {replace: true});
             } else {
-                toast.error(result.error);
+                toast.error(result.data.error);
             }
         } catch(err){
             console.log(err);
@@ -80,7 +80,7 @@ export const AuthContextProvider = ({children}) => {
     //register request
     const registerUser = async (userData) => {
         try {
-            const res = await fetch('http://localhost:8000/api/register', {
+            const res = await fetch('http://localhost:8000/api/Auth/register', {
                 method: "POST",
                 headers: {
                     "Content-Type":"application/json",

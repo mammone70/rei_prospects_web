@@ -26,7 +26,6 @@ const Register = () => {
         console.log(credentials);
 
         event.preventDefault();
-        console.log(credentials);
         if (
             !credentials.email || 
             !credentials.password || 
@@ -41,7 +40,7 @@ const Register = () => {
         }
 
         const userData = {...credentials, confirmPassword: undefined};
-        registerUser({userData});
+        registerUser(userData);
     };
 
     return <>
