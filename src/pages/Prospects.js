@@ -68,15 +68,22 @@ const Prospects = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospect`, {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects?${new URLSearchParams({
+                limit: 25
+              })}`, 
+              {
                 method: "GET",
                 headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+      
+                que: {
+                  limit : 25,
                 },
             });
             const result = await res.json();
             if (!result.error) {
-                setProspects(result.prospects);
+                setProspects(result.data);
                 setLoading(false);
             } else {
                 console.log(result);

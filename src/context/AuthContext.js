@@ -22,7 +22,7 @@ export const AuthContextProvider = ({children}) => {
             navigate("/login", {replace:true});
         }
         try {
-            const res = await fetch('http://localhost:8000/api/Auth/checkLogin', {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Auth/checkLogin`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -55,7 +55,7 @@ export const AuthContextProvider = ({children}) => {
     //login request
     const loginUser = async (userData) => {
         try {
-            const res = await fetch('http://localhost:8000/api/Auth/login', {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type":"application/json",
@@ -68,7 +68,7 @@ export const AuthContextProvider = ({children}) => {
                 setUser(result.data.user);
                 toast.success(`Logged in ${result.data.user.name}`);
 
-                navigate("/", {replace: true});
+                navigate("/prospects", {replace: true});
             } else {
                 toast.error(result.data.error);
             }
@@ -80,7 +80,7 @@ export const AuthContextProvider = ({children}) => {
     //register request
     const registerUser = async (userData) => {
         try {
-            const res = await fetch('http://localhost:8000/api/Auth/register', {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type":"application/json",
