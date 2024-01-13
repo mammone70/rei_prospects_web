@@ -9,6 +9,7 @@ import { AuthContextProvider } from "./context/AuthContext";
 import { ToastContextProvider } from "./context/ToastContext";
 import Prospects from "./pages/Prospects";
 import EditProspect from "./pages/EditProspect";
+import CSVUpload from "./pages/CSVUpload";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
             <Route exact path="/register" element={<Register />} />
             <Route exact path="/create" element={<CreateProspect />} />
             <Route exact path="/prospects" element={<Prospects />} />
+            <Route exact path="/csvUpload" element={<CSVUpload />} />
             <Route path="/edit/:id" element={<EditProspect />} />
           </Routes>
         </Layout>

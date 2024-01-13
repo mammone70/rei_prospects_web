@@ -31,6 +31,11 @@ const Navbar = ({title = "REI Prospects"}) => {
                                     Add Prospect
                                 </Link>
                             </li>
+                            <li className="nav-item">
+                                <Link to="/csvUpload" className="nav-link">
+                                    Upload Prospects
+                                </Link>
+                            </li>
                             <li className="nav-item"
                                 onClick={() => {
                                     setUser(null);
