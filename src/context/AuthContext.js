@@ -13,44 +13,44 @@ export const AuthContextProvider = ({children}) => {
     const [user, setUser] = useState(null);
 
      useEffect(() => {
-        checkUserLoggedIn();
-     }, []);
+        //check if user logged in
+        const checkUserLoggedIn = async () => {
+            if(!localStorage.getItem("token")){
+                navigate("/login", {replace:true});
+            }
+            try {
+                const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Auth/checkLogin`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+                const result = await res.json();
+                if (!result.error) {
+                    if (
+                        window.location.pathname === "/login" ||
+                        window.location.pathname === "/register"
+                    ) {
+                        setTimeout(() => {
+                        navigate("/", { replace: true });
+                        }, 500);
+                    } else {
+                        navigate(
+                            window.location.pathname ? 
+                            window.location.pathname : 
+                            "/");
+                    }
+                    setUser(result);
+                    } else {
+                    navigate("/login", { replace: true });
+                    }
+            } catch (err) {
+                console.log(err)
+            }
+        }
 
-     //check if user logged in
-     const checkUserLoggedIn = async () => {
-        if(!localStorage.getItem("token")){
-            navigate("/login", {replace:true});
-        }
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Auth/checkLogin`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            const result = await res.json();
-            if (!result.error) {
-                if (
-                    window.location.pathname === "/login" ||
-                    window.location.pathname === "/register"
-                  ) {
-                    setTimeout(() => {
-                      navigate("/", { replace: true });
-                    }, 500);
-                  } else {
-                    navigate(
-                        window.location.pathname ? 
-                        window.location.pathname : 
-                        "/");
-                  }
-                  setUser(result);
-                } else {
-                  navigate("/login", { replace: true });
-                }
-        } catch (err) {
-            console.log(err)
-        }
-     }
+        checkUserLoggedIn();
+     }, [navigate]);
 
     //login request
     const loginUser = async (userData) => {
