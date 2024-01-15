@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 // import { z } from 'zod'
@@ -8,6 +8,8 @@ import { motion } from 'framer-motion'
 // import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import ToastContext from '../context/ToastContext'
+
+import CreatableSelect from 'react-select/creatable';
 
 // type Inputs = z.infer<typeof FormDataSchema>
 
@@ -32,7 +34,7 @@ const steps = [
     },
 ]
 
-export default function CSVUploadForm({prospectFields}) {
+export default function CSVUploadForm() {
     const [previousStep, setPreviousStep] = useState(0)
     const [currentStep, setCurrentStep] = useState(0)
     const delta = currentStep - previousStep
@@ -61,6 +63,88 @@ export default function CSVUploadForm({prospectFields}) {
     }
 
 //   type FieldName = keyof Inputs
+
+  const [loading, setLoading] = useState(false);
+  const [prospectFields, setProspectFields] = useState([]);
+  const [prospectLists, setProspectLists] = useState([]);
+  const [prospectTags, setProspectTags] = useState([]);
+
+
+  useEffect(() => {
+      const fetchFieldMap = async () => {
+          setLoading(true);
+          try {
+              const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/CSVUpload/FieldMapping`, 
+                  {
+                      method: "GET",
+                      headers: {
+                          Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
+              });
+              const result = await res.json();
+              if (!result.error) {
+                  setProspectFields(result.data);
+                  setLoading(false);
+              } else {
+                  console.log(result);
+                  setLoading(false);
+              }
+          } catch (err) {
+              console.log(err);
+          }
+      };
+
+      const fetchLists = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/ProspectLists`, 
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            const result = await res.json();
+            if (!result.error) {
+                setProspectLists(result.data);
+                setLoading(false);
+            } else {
+                console.log(result);
+                setLoading(false);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    const fetchTags = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/ProspectTags`, 
+            {
+              method: "GET",
+              headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            });
+            const result = await res.json();
+            if (!result.error) {
+                setProspectTags(result.data);
+                setLoading(false);
+            } else {
+                console.log(result);
+                setLoading(false);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+    //TODO cache this?
+    fetchFieldMap();
+    fetchLists();
+    fetchTags();  
+  
+  }, []);
 
   const next = async () => {
     const fields = steps[currentStep].fields;
@@ -113,6 +197,46 @@ export default function CSVUploadForm({prospectFields}) {
         fileReader.readAsText(file);
     }
   }
+  
+  const handleCreateTag = async (newTag) => {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_SERVER_URL}/ProspectTags`, {
+          method: 'POST',
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          }, 
+      body: JSON.stringify({name:newTag})
+    });
+
+    const result = await res.json();
+    if(!result.error){
+      toast.success(`${newTag} added.`)
+      setProspectTags((prev) => [...prev, result.data]);
+    } else {
+      toast.error(result.error);
+    }
+  };
+
+  const handleCreateList = async (newList) => {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_SERVER_URL}/ProspectLists`, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        }, 
+    body: JSON.stringify({name:newList})
+  });
+
+    const result = await res.json();
+    if(!result.error){
+      toast.success(`${newList} added.`)
+      setProspectLists((prev) => [...prev, result.data]);
+    } else {
+      toast.error(result.error);
+    }
+  };
 
   return (
     <section className='absolute inset-0 flex flex-col justify-between p-24'>
@@ -217,47 +341,120 @@ export default function CSVUploadForm({prospectFields}) {
             <p className='mt-1 text-base leading-6 text-gray-600'>
                 Map .csv file headers to Prospect fields.
             </p>
-            
-                {csvHeaders.map((header, index) => (
-                    <>
-                        <div class="md:flex md:items-center mb-6 mt-6">
-                            <div class="md:w-1/2">
-                                <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for={index}>
-                                    {header}
-                                </label>
-                            </div>
-                            <div class="md:w-1/2">
-                                <select class="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id={index}>
-                                    <option value=""></option>
-                                    {prospectFields.map((prospectField, index) => (
-                                        <>
-                                            <option value={prospectField.fieldName}>
-                                                {
-                                                    prospectField.required ? (
-                                                        `${prospectField.displayName}*`
-                                                    ) :(
-                                                        prospectField.displayName
-                                                    )
-                                                }
-                                            </option>
-                                        </>     
-                                    ))}
-                                </select>    
-                            </div>
+              {csvHeaders.map((header, index) => (
+                <>
+                    <div key={index} className="md:flex md:items-center mb-6 mt-6">
+                        <div className="md:w-1/2">
+                            <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" htmlFor={index}>
+                                {header}
+                            </label>
                         </div>
-                    </>
-                ))}
+                        <div className="md:w-1/2">
+                            <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" id={index}>
+                                  <option key={prospectFields.length} value=""></option>
+                                {prospectFields.map((prospectField, index) => (
+                                    <>
+                                        <option key={index} value={prospectField.fieldName}>
+                                            {
+                                                prospectField.required ? (
+                                                    `${prospectField.displayName}*`
+                                                ) :(
+                                                    prospectField.displayName
+                                                )
+                                            }
+                                        </option>
+                                    </>     
+                                ))}
+                            </select>    
+                        </div>
+                    </div>
+                </>
+            ))}
           </motion.div>
         )}
 
         {currentStep === 2 && (
           <>
-            <h2 className='text-base font-semibold leading-7 text-gray-900'>
-              Complete
+            <h2 className='text-lg font-semibold leading-7'>
+              Lists and Tags
             </h2>
-            <p className='mt-1 text-sm leading-6 text-gray-600'>
-              Thank you for your submission.
+            <p className='mt-1 text-base leading-6 text-gray-600'>
+              Select Lists and Tags for Prospects
             </p>
+            <div className="md:flex md:items-center mb-6 mt-6">
+              <div className="md:w-1/2">
+                  <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" htmlFor="lists">
+                      Lists
+                  </label>
+              </div>
+              <div className="md:w-1/2 text-black">
+              <CreatableSelect
+                  isMulti
+                  name="lists"
+                  options={prospectLists.map(
+                    prospectList => {
+                      return {
+                        value:prospectList._id,
+                        label:prospectList.name,
+                      };
+                    }
+                  )}
+                  closeMenuOnScroll={false}
+                  closeMenuOnSelect={false}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                  placeholder=""
+                  onCreateOption={handleCreateList}
+                />
+                  {/* <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" id="lists">
+                        <option key={prospectLists.length} value=""></option>
+                        {prospectLists.map((prospectList, index) => (
+                          <>
+                              <option key={prospectList._id} value={prospectList._id}>
+                                  {prospectList.name}
+                              </option>
+                          </>     
+                      ))}
+                  </select>     */}
+              </div>
+            </div>
+            <div className="md:flex md:items-center mb-6 mt-6">
+              <div className="md:w-1/2">
+                  <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" htmlFor="tags">
+                      Tags
+                  </label>
+              </div>
+              <div className="md:w-1/2 text-black">
+                  {/* <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" id="tags">
+                        <option key={prospectTags.length} value=""></option>
+                        {prospectTags.map((prospectTag, index) => (
+                          <>
+                              <option key={prospectTag._id} value={prospectTag._id}>
+                                  {prospectTag.name}
+                              </option>
+                          </>     
+                      ))}
+                  </select>     */}
+                  <CreatableSelect
+                    isMulti
+                    name="tags"
+                    options={prospectTags.map(
+                      prospectTag => {
+                        return {
+                          value:prospectTag._id,
+                          label:prospectTag.name,
+                        };
+                      }
+                    )}
+                    closeMenuOnScroll={false}
+                    closeMenuOnSelect={false}
+                    className="basic-multi-select"
+                    classNamePrefix="select"
+                    placeholder=""
+                    onCreateOption={handleCreateTag}
+                  />
+              </div>
+            </div>
           </>
         )}
       </form>
