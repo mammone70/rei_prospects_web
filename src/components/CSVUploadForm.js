@@ -22,11 +22,12 @@ const steps = [
     {
         id: 'Step 2',
         name: 'Map .csv Headers',
-        fields: ['country', 'state', 'city', 'street', 'zip']
+        fields: []
     },
     { 
-        id: 'Step 3', 
-        name: 'Select List and Tags'    
+        id: 'Step 3',
+        name: 'Lists & Tags', 
+        fields: ['lists', 'tags']    
     },
     { 
         id: 'Step 4', 
@@ -35,15 +36,25 @@ const steps = [
 ]
 
 export default function CSVUploadForm() {
-    const [previousStep, setPreviousStep] = useState(0)
-    const [currentStep, setCurrentStep] = useState(0)
-    const delta = currentStep - previousStep
+  const [previousStep, setPreviousStep] = useState(0)
+  const [currentStep, setCurrentStep] = useState(0)
+  const delta = currentStep - previousStep
 
-    const [file, setFile] = useState();
-    const [csvHeaders, setCsvHeaders] = useState([]);
-    const fileReader = new FileReader();
+  const [file, setFile] = useState();
+  const [csvHeaders, setCsvHeaders] = useState([]);
+  const fileReader = new FileReader();
 
-    const {toast} = useContext(ToastContext);
+  const [loading, setLoading] = useState(false);
+  
+  const [allRequiredFieldsMapped, setAllRequiredFieldsMapped] = useState(false);
+  const [prospectFields, setProspectFields] = useState([]);
+  const [prospectLists, setProspectLists] = useState([]);
+  const [prospectTags, setProspectTags] = useState([]);
+
+  // const [requiredProspectFields, setRequiredProspectFields] = useState([]);
+  const [requiredProspectFields, setRequiredProspectFields] = useState({});
+
+  const {toast} = useContext(ToastContext);
 
   const {
     register,
@@ -56,19 +67,13 @@ export default function CSVUploadForm() {
 //     resolver: zodResolver(FormDataSchema)
 //   })
 
-//   const processForm: SubmitHandler<Inputs> = data => {
     const processForm = data => {
         console.log(data)
+
         reset()
     }
 
 //   type FieldName = keyof Inputs
-
-  const [loading, setLoading] = useState(false);
-  const [prospectFields, setProspectFields] = useState([]);
-  const [prospectLists, setProspectLists] = useState([]);
-  const [prospectTags, setProspectTags] = useState([]);
-
 
   useEffect(() => {
       const fetchFieldMap = async () => {
@@ -84,6 +89,15 @@ export default function CSVUploadForm() {
               const result = await res.json();
               if (!result.error) {
                   setProspectFields(result.data);
+                  
+                  //extract separate list of required fields
+                  let requiredFields = {};
+                  for(let prospectField of result.data){
+                    if(prospectField.required){
+                      requiredFields[prospectField.fieldName] = "";
+                    }
+                  }
+                  setRequiredProspectFields(requiredFields);
                   setLoading(false);
               } else {
                   console.log(result);
@@ -146,6 +160,28 @@ export default function CSVUploadForm() {
   
   }, []);
 
+  const nextButtonDisabled = () => {
+    console.log("here");
+    if (currentStep === steps.length - 1) return true; 
+
+    switch (currentStep) {
+      case 0: 
+        //file select
+        //make sure we have a valid file
+        return (file) ? false : true;
+      case 1:
+      //field map
+        return !allRequiredFieldsMapped;
+      case 2:
+      //Lists and Tags
+
+      break;
+      default:
+      //should never happen
+      break;
+    }
+  }
+
   const next = async () => {
     const fields = steps[currentStep].fields;
     // const output = await trigger(fields as FieldName[], { shouldFocus: true })
@@ -170,7 +206,7 @@ export default function CSVUploadForm() {
   }
 
   const handleFileChange = (e) => {
-    // console.log(prospectFields);
+    console.log(e.target.files[0]);
 
     const file = e.target.files[0];
     setFile(file);
@@ -198,6 +234,59 @@ export default function CSVUploadForm() {
     }
   }
   
+  const handleFieldMapChange = (e) => {
+    let headerSelectName = e.target.name;
+    let newProspectField = e.target.selectedOptions[0].value;
+
+    //see if header was previously mapped to a required field
+    var oldRequiredField = 
+      Object.keys(requiredProspectFields).find( key => 
+        requiredProspectFields[key] === headerSelectName
+      );
+
+    //if header was previously mapped, reset the old header mapping
+    if(oldRequiredField){
+      setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name, [oldRequiredField] : ""});
+    }
+    else {
+      setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name});  
+    }
+
+        
+    ensureUniqueFieldMap(e);
+    checkAllRequiredFieldsMapped(e)
+  }
+
+  const ensureUniqueFieldMap = (e) => {
+    let destinationField = e.target.selectedOptions[0].value;
+    let targetHeaderMappingName = e.target.name; 
+  
+    //if value of changed header mapping is not nothing/null
+    if(!destinationField) return;
+    
+    //iterate through all of the mapping inputs
+    for(let currentHeaderSelect of e.target.form){
+      //skip this event handlers mapping input
+      if(currentHeaderSelect.name === targetHeaderMappingName) continue;
+
+      //if header mapping destination field is equal to this events destination field
+      if(currentHeaderSelect.value === destinationField){
+        //change header mapping destination field to nothing/empty
+        currentHeaderSelect.selectedIndex = 0;
+
+        //should be able to break the for loop becuase there should never be
+        //more than one Select Box with a given destination field
+        break;
+      }
+    }
+  }
+
+  const checkAllRequiredFieldsMapped = (e) => {
+    // console.log(e);
+    // console.log(requiredProspectFields);
+    setAllRequiredFieldsMapped(!Object.values(requiredProspectFields).includes(""));
+  }
+
   const handleCreateTag = async (newTag) => {
         const res = await fetch(
           `${process.env.REACT_APP_API_SERVER_URL}/ProspectTags`, {
@@ -274,7 +363,55 @@ export default function CSVUploadForm() {
           ))}
         </ol>
       </nav>
-
+      
+      {/* Navigation */}
+      <div className='mt-8 pt-5'>
+        <div className='flex justify-between'>
+          <button
+            type='button'
+            onClick={prev}
+            disabled={currentStep === 0}
+            className='rounded bg-white px-2 py-1 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-inset ring-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              fill='none'
+              viewBox='0 0 24 24'
+              strokeWidth='1.5'
+              stroke='currentColor'
+              className='h-6 w-6'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                d='M15.75 19.5L8.25 12l7.5-7.5'
+              />
+            </svg>
+          </button>
+          {(file) && <p>{file.name}</p>}
+          <button
+            type='button'
+            onClick={next}
+            disabled={nextButtonDisabled()}
+            className='rounded bg-white px-2 py-1 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-inset ring-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              fill='none'
+              viewBox='0 0 24 24'
+              strokeWidth='1.5'
+              stroke='currentColor'
+              className='h-6 w-6'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                d='M8.25 4.5l7.5 7.5-7.5 7.5'
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
       {/* Form */}
       <form className='mt-12 py-12' onSubmit={handleSubmit(processForm)}>
         {currentStep === 0 && (
@@ -308,15 +445,13 @@ export default function CSVUploadForm() {
                     // autoComplete='given-name'
                     // className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6'
                     // className='block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400'                
-                    className=  'block w-full text-sm text-gray-500 bg-gray-50 border-gray-300 rounded-lg
-                                file:me-4 file:py-2 file:px-4
+                    className=' block w-full text-sm text-gray-500 bg-gray-50 border-gray-300 rounded-lg file:me-4 file:py-2 file:px-4
                                 file:rounded-lg file:border-0
                                 file:text-sm file:font-semibold
                                 file:bg-sky-600 file:text-white
                                 hover:file:bg-blue-700
                                 file:disabled:opacity-50 file:disabled:pointer-events-none
-                                dark:file:bg-blue-500
-                                dark:hover:file:bg-blue-400'
+                                dark:file:bg-blue-500 dark:hover:file:bg-blue-400'
                   />
                   {/* {errors.fileName?.message && (
                     <p className='mt-2 text-sm text-red-400'>
@@ -343,14 +478,19 @@ export default function CSVUploadForm() {
             </p>
               {csvHeaders.map((header, index) => (
                 <>
-                    <div key={index} className="md:flex md:items-center mb-6 mt-6">
+                    <div key={header} className="md:flex md:items-center mb-6 mt-6">
                         <div className="md:w-1/2">
                             <label className="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" htmlFor={index}>
                                 {header}
                             </label>
                         </div>
                         <div className="md:w-1/2">
-                            <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" id={index}>
+                            <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" 
+                                    id={index}
+                                    key={header}
+                                    {...register(`${header}`)}
+                                    onChange={handleFieldMapChange}
+                            >
                                   <option key={prospectFields.length} value=""></option>
                                 {prospectFields.map((prospectField, index) => (
                                     <>
@@ -458,54 +598,6 @@ export default function CSVUploadForm() {
           </>
         )}
       </form>
-
-      {/* Navigation */}
-      <div className='mt-8 pt-5'>
-        <div className='flex justify-between'>
-          <button
-            type='button'
-            onClick={prev}
-            disabled={currentStep === 0}
-            className='rounded bg-white px-2 py-1 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-inset ring-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth='1.5'
-              stroke='currentColor'
-              className='h-6 w-6'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M15.75 19.5L8.25 12l7.5-7.5'
-              />
-            </svg>
-          </button>
-          <button
-            type='button'
-            onClick={next}
-            disabled={currentStep === steps.length - 1}
-            className='rounded bg-white px-2 py-1 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-inset ring-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth='1.5'
-              stroke='currentColor'
-              className='h-6 w-6'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M8.25 4.5l7.5 7.5-7.5 7.5'
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
     </section>
   )
 }
