@@ -35,6 +35,9 @@ const steps = [
     },
 ]
 
+var requiredProspectFields = {};
+var allRequiredFieldsMapped = false;
+
 export default function CSVUploadForm() {
   const [previousStep, setPreviousStep] = useState(0)
   const [currentStep, setCurrentStep] = useState(0)
@@ -46,13 +49,15 @@ export default function CSVUploadForm() {
 
   const [loading, setLoading] = useState(false);
   
-  const [allRequiredFieldsMapped, setAllRequiredFieldsMapped] = useState(false);
+  // const [allRequiredFieldsMapped, setAllRequiredFieldsMapped] = useState(false);
   const [prospectFields, setProspectFields] = useState([]);
   const [prospectLists, setProspectLists] = useState([]);
   const [prospectTags, setProspectTags] = useState([]);
 
   // const [requiredProspectFields, setRequiredProspectFields] = useState([]);
-  const [requiredProspectFields, setRequiredProspectFields] = useState({});
+  // const [requiredProspectFields, setRequiredProspectFields] = useState({});
+
+  const [nextButtonDisabled, setNextButtonDisabled] = useState(true);
 
   const {toast} = useContext(ToastContext);
 
@@ -91,13 +96,11 @@ export default function CSVUploadForm() {
                   setProspectFields(result.data);
                   
                   //extract separate list of required fields
-                  let requiredFields = {};
                   for(let prospectField of result.data){
                     if(prospectField.required){
-                      requiredFields[prospectField.fieldName] = "";
+                      requiredProspectFields[prospectField.fieldName] = "";
                     }
                   }
-                  setRequiredProspectFields(requiredFields);
                   setLoading(false);
               } else {
                   console.log(result);
@@ -160,18 +163,20 @@ export default function CSVUploadForm() {
   
   }, []);
 
-  const nextButtonDisabled = () => {
-    console.log("here");
+
+  const nextButtonDisabledCheck = () => {
     if (currentStep === steps.length - 1) return true; 
 
     switch (currentStep) {
       case 0: 
         //file select
         //make sure we have a valid file
-        return (file) ? false : true;
+        setNextButtonDisabled((file) ? false : true);
+        break;
       case 1:
       //field map
-        return !allRequiredFieldsMapped;
+        setNextButtonDisabled(!allRequiredFieldsMapped);
+        break;
       case 2:
       //Lists and Tags
 
@@ -195,6 +200,7 @@ export default function CSVUploadForm() {
       }
       setPreviousStep(currentStep)
       setCurrentStep(step => step + 1)
+      nextButtonDisabledCheck();
     }
   }
 
@@ -202,6 +208,7 @@ export default function CSVUploadForm() {
     if (currentStep > 0) {
       setPreviousStep(currentStep)
       setCurrentStep(step => step - 1)
+      nextButtonDisabledCheck();
     }
   }
 
@@ -238,23 +245,37 @@ export default function CSVUploadForm() {
     let headerSelectName = e.target.name;
     let newProspectField = e.target.selectedOptions[0].value;
 
+    console.log("headerSelectName " + headerSelectName);
+    console.log("newProspectField " + newProspectField);
+
+    //check if New Prospect Field selection is required
+
     //see if header was previously mapped to a required field
     var oldRequiredField = 
       Object.keys(requiredProspectFields).find( key => 
         requiredProspectFields[key] === headerSelectName
       );
 
+    if(newProspectField && (newProspectField in requiredProspectFields)){
+      //if header was previously mapped, reset the old header mapping AND set new prospect field mapping
+      if(oldRequiredField){
+        // setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name, [oldRequiredField] : ""});
+        requiredProspectFields = {...requiredProspectFields, [newProspectField]: headerSelectName, [oldRequiredField] : ""};
+      }
+      else {
+        // setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name});
+        requiredProspectFields = {...requiredProspectFields, [newProspectField]: headerSelectName};
+      }
+    }
     //if header was previously mapped, reset the old header mapping
-    if(oldRequiredField){
-      setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name, [oldRequiredField] : ""});
+    else if(oldRequiredField) {
+      // setRequiredProspectFields({...requiredProspectFields, [oldRequiredField] : ""});
+      requiredProspectFields = {...requiredProspectFields, [oldRequiredField] : ""};
     }
-    else {
-      setRequiredProspectFields({...requiredProspectFields, [newProspectField]: e.target.name});  
-    }
-
         
     ensureUniqueFieldMap(e);
-    checkAllRequiredFieldsMapped(e)
+    checkAllRequiredFieldsMapped(e);
+    nextButtonDisabledCheck();
   }
 
   const ensureUniqueFieldMap = (e) => {
@@ -282,9 +303,10 @@ export default function CSVUploadForm() {
   }
 
   const checkAllRequiredFieldsMapped = (e) => {
-    // console.log(e);
-    // console.log(requiredProspectFields);
-    setAllRequiredFieldsMapped(!Object.values(requiredProspectFields).includes(""));
+    // console.log(e\);
+    console.log(requiredProspectFields);
+    // setAllRequiredFieldsMapped(!Object.values(requiredProspectFields).includes(""));
+    allRequiredFieldsMapped = !Object.values(requiredProspectFields).includes("");
   }
 
   const handleCreateTag = async (newTag) => {
@@ -328,7 +350,7 @@ export default function CSVUploadForm() {
   };
 
   return (
-    <section className='absolute inset-0 flex flex-col justify-between p-24'>
+    <section className='absolute inset-0 flex flex-col justify-between px-24 pt-24 pb-6'>
       {/* steps */}
       <nav aria-label='Progress'>
         <ol className='space-y-4 md:flex md:space-x-8 md:space-y-0'>
@@ -392,7 +414,7 @@ export default function CSVUploadForm() {
           <button
             type='button'
             onClick={next}
-            disabled={nextButtonDisabled()}
+            disabled={nextButtonDisabled}
             className='rounded bg-white px-2 py-1 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-inset ring-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50'
           >
             <svg
@@ -413,7 +435,7 @@ export default function CSVUploadForm() {
         </div>
       </div>
       {/* Form */}
-      <form className='mt-12 py-12' onSubmit={handleSubmit(processForm)}>
+      <form className='mt-12 py-12 overflow-auto' onSubmit={handleSubmit(processForm)}>
         {currentStep === 0 && (
           <motion.div
             initial={{ x: delta >= 0 ? '50%' : '-50%', opacity: 0 }}
