@@ -10,6 +10,8 @@ import { useForm, SubmitHandler } from 'react-hook-form'
 import ToastContext from '../context/ToastContext'
 
 import CreatableSelect from 'react-select/creatable';
+import Select from 'react-select'
+import { Autocomplete, TextField } from '@mui/material'
 
 // type Inputs = z.infer<typeof FormDataSchema>
 
@@ -43,7 +45,6 @@ export default function CSVUploadForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const delta = currentStep - previousStep
 
-  const [file, setFile] = useState();
   const [csvHeaders, setCsvHeaders] = useState([]);
   const fileReader = new FileReader();
 
@@ -54,9 +55,13 @@ export default function CSVUploadForm() {
   const [prospectLists, setProspectLists] = useState([]);
   const [prospectTags, setProspectTags] = useState([]);
 
-  // const [requiredProspectFields, setRequiredProspectFields] = useState([]);
-  // const [requiredProspectFields, setRequiredProspectFields] = useState({});
-
+  const [csvUploadFields, setcsvUploadFields] = useState({
+    file: null,
+    csvHeaderMappings: {},
+    tags: [],
+    lists: [],
+  });
+  
   const [nextButtonDisabled, setNextButtonDisabled] = useState(true);
 
   const {toast} = useContext(ToastContext);
@@ -171,7 +176,7 @@ export default function CSVUploadForm() {
       case 0: 
         //file select
         //make sure we have a valid file
-        setNextButtonDisabled((file) ? false : true);
+        setNextButtonDisabled((csvUploadFields.file) ? false : true);
         break;
       case 1:
       //field map
@@ -216,38 +221,53 @@ export default function CSVUploadForm() {
     console.log(e.target.files[0]);
 
     const file = e.target.files[0];
-    setFile(file);
-
+    
     if (file) {
         fileReader.onload = function (event) {
             const text = event.target.result;
             
             const csvHeaders = text.slice(0, text.indexOf("\n")).split(",");
-            setCsvHeaders(csvHeaders);
-            // console.log(csvHeaders);
+            
+            //new file, new header mappings
+            let csvHeaderMappings = {};
+            for(let csvHeader of csvHeaders){
+              csvHeaderMappings[csvHeader] = '';
+            }
 
-            // const csvRows = text.slice(text.indexOf("\n") + 1).split("\n");
-            // console.log(csvRows);
+            setcsvUploadFields(
+              {
+                ...csvUploadFields, 
+                file: file,
+                csvHeaderMappings: csvHeaderMappings,
+              }
+            );
 
             next();
         }
 
         fileReader.onerror = function (event) {
             toast.error("Unable to load .csv file headers.");
-            setFile(null);
+            setcsvUploadFields(
+              {
+                ...csvUploadFields, 
+                file: null, 
+                csvHeaderMappings: []
+              }
+            );
         };
 
         fileReader.readAsText(file);
     }
   }
   
-  const handleFieldMapChange = (e) => {
-    let headerSelectName = e.target.name;
-    let newProspectField = e.target.selectedOptions[0].value;
+  const handleFieldMapChange = (e, v) => {
+    let headerSelectName = v.header;
+    let newProspectField = v.value;
 
     console.log("headerSelectName " + headerSelectName);
     console.log("newProspectField " + newProspectField);
-
+    
+    
     //check if New Prospect Field selection is required
 
     //see if header was previously mapped to a required field
@@ -273,13 +293,13 @@ export default function CSVUploadForm() {
       requiredProspectFields = {...requiredProspectFields, [oldRequiredField] : ""};
     }
         
-    ensureUniqueFieldMap(e);
-    checkAllRequiredFieldsMapped(e);
+    ensureUniqueFieldMap(e, v);
+    checkAllRequiredFieldsMapped(e, v);
     nextButtonDisabledCheck();
   }
 
-  const ensureUniqueFieldMap = (e) => {
-    let destinationField = e.target.selectedOptions[0].value;
+  const ensureUniqueFieldMap = (e, v) => {
+    let destinationField = v;
     let targetHeaderMappingName = e.target.name; 
   
     //if value of changed header mapping is not nothing/null
@@ -302,10 +322,7 @@ export default function CSVUploadForm() {
     }
   }
 
-  const checkAllRequiredFieldsMapped = (e) => {
-    // console.log(e\);
-    console.log(requiredProspectFields);
-    // setAllRequiredFieldsMapped(!Object.values(requiredProspectFields).includes(""));
+  const checkAllRequiredFieldsMapped = () => {
     allRequiredFieldsMapped = !Object.values(requiredProspectFields).includes("");
   }
 
@@ -410,7 +427,7 @@ export default function CSVUploadForm() {
               />
             </svg>
           </button>
-          {(file) && <p>{file.name}</p>}
+          {(csvUploadFields.file) && <p>{csvUploadFields.file.name}</p>}
           <button
             type='button'
             onClick={next}
@@ -498,7 +515,7 @@ export default function CSVUploadForm() {
             <p className='mt-1 text-base leading-6 text-gray-600'>
                 Map .csv file headers to Prospect fields.
             </p>
-              {csvHeaders.map((header, index) => (
+              {Object.keys(csvUploadFields.csvHeaderMappings).map((header, index) => (
                 <>
                     <div key={header} className="md:flex md:items-center mb-6 mt-6">
                         <div className="md:w-1/2">
@@ -507,13 +524,29 @@ export default function CSVUploadForm() {
                             </label>
                         </div>
                         <div className="md:w-1/2">
-                            <select className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" 
-                                    id={index}
+                            <Autocomplete className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" 
+                                    id={header}
                                     key={header}
+                                    renderInput={(params) => <TextField {...params} label="Prospect Field" />}
+                                    options={prospectFields.map(
+                                      (prospectField) => {
+                                        return {
+                                          header: header,
+                                          value:prospectField.fieldName,
+                                          label:prospectField.required ? (
+                                                    `${prospectField.displayName}*`
+                                                  ) :(
+                                                    prospectField.displayName
+                                                  )
+                                        };
+                                      }
+                                    )}
+                                    isOptionEqualToValue={(option, value) => option.value === value.value}
                                     {...register(`${header}`)}
                                     onChange={handleFieldMapChange}
+                                    // isSearchable={true} 
                             >
-                                  <option key={prospectFields.length} value=""></option>
+                                   {/* <option key={prospectFields.length} value=""></option>
                                 {prospectFields.map((prospectField, index) => (
                                     <>
                                         <option key={index} value={prospectField.fieldName}>
@@ -526,8 +559,8 @@ export default function CSVUploadForm() {
                                             }
                                         </option>
                                     </>     
-                                ))}
-                            </select>    
+                                ))} */}
+                            </Autocomplete>     
                         </div>
                     </div>
                 </>
