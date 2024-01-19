@@ -52,6 +52,7 @@ export default function CSVUploadForm() {
   
   // const [allRequiredFieldsMapped, setAllRequiredFieldsMapped] = useState(false);
   const [prospectFields, setProspectFields] = useState([]);
+  const [prospectFieldsOptions, setProspectFieldsOptions] = useState([]);
   const [prospectLists, setProspectLists] = useState([]);
   const [prospectTags, setProspectTags] = useState([]);
 
@@ -99,7 +100,21 @@ export default function CSVUploadForm() {
               const result = await res.json();
               if (!result.error) {
                   setProspectFields(result.data);
-                  
+                  setProspectFieldsOptions(
+                    result.data.map(
+                      (prospectField) => {
+                        return {
+                          // header: header,
+                          value:prospectField.fieldName,
+                          label:prospectField.required ? (
+                                    `${prospectField.displayName}*`
+                                  ) :(
+                                    prospectField.displayName
+                                  )
+                        };
+                      }
+                    )
+                  );
                   //extract separate list of required fields
                   for(let prospectField of result.data){
                     if(prospectField.required){
@@ -260,15 +275,12 @@ export default function CSVUploadForm() {
     }
   }
   
-  const handleFieldMapChange = (e, v) => {
-    let headerSelectName = v.header;
-    let newProspectField = v.value;
+  const handleFieldMapChange = (e, v, header) => {
+    let headerSelectName = header;
+    const newProspectField = (v) ? v.value : "";
 
-    console.log("headerSelectName " + headerSelectName);
-    console.log("newProspectField " + newProspectField);
-    
-    
-    //check if New Prospect Field selection is required
+    //create an object to contain updated csv header properties
+    let updatedHeaderMappings = {[headerSelectName]: newProspectField};
 
     //see if header was previously mapped to a required field
     var oldRequiredField = 
@@ -293,33 +305,47 @@ export default function CSVUploadForm() {
       requiredProspectFields = {...requiredProspectFields, [oldRequiredField] : ""};
     }
         
-    ensureUniqueFieldMap(e, v);
-    checkAllRequiredFieldsMapped(e, v);
+    //if value of changed header mapping is not nothing/null
+    if(newProspectField) {
+      //iterate through all of the mapping inputs
+      for(const [currentHeaderSelect, currentProspectField] of Object.entries(csvUploadFields.csvHeaderMappings)){
+        //skip this event handlers mapping input
+        if(currentHeaderSelect === headerSelectName) continue;
+
+        //if header mapping destination field is equal to this events destination field
+        if(currentProspectField === newProspectField){
+          //change header mapping destination field to nothing/empty
+          updatedHeaderMappings[currentHeaderSelect] = "";
+
+          //should be able to break the for loop becuase there should never be
+          //more than one Select Box with a given destination field
+          break;
+        }
+      }
+    }
+
+    //update csv header state
+    setcsvUploadFields(
+      {
+        ...csvUploadFields,
+        csvHeaderMappings : 
+        {
+          ...csvUploadFields.csvHeaderMappings,
+          ...updatedHeaderMappings,
+        }
+      }
+    );
+
+    // checkAllRequiredFieldsMapped(e, v);
     nextButtonDisabledCheck();
   }
 
-  const ensureUniqueFieldMap = (e, v) => {
-    let destinationField = v;
-    let targetHeaderMappingName = e.target.name; 
+  // const ensureUniqueFieldMap = (e, v) => {
+  const ensureUniqueFieldMap = (headerSelectName, prospectField) => {  
+    // let destinationField = v;
+    // let targetHeaderMappingName = e.target.name; 
   
-    //if value of changed header mapping is not nothing/null
-    if(!destinationField) return;
     
-    //iterate through all of the mapping inputs
-    for(let currentHeaderSelect of e.target.form){
-      //skip this event handlers mapping input
-      if(currentHeaderSelect.name === targetHeaderMappingName) continue;
-
-      //if header mapping destination field is equal to this events destination field
-      if(currentHeaderSelect.value === destinationField){
-        //change header mapping destination field to nothing/empty
-        currentHeaderSelect.selectedIndex = 0;
-
-        //should be able to break the for loop becuase there should never be
-        //more than one Select Box with a given destination field
-        break;
-      }
-    }
   }
 
   const checkAllRequiredFieldsMapped = () => {
@@ -527,40 +553,22 @@ export default function CSVUploadForm() {
                             <Autocomplete className="block appearance-none w-48 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-1 focus:bg-white focus:border-sky-500" 
                                     id={header}
                                     key={header}
+                                    value={
+                                      prospectFieldsOptions.find(
+                                        (prospectFieldOption) => 
+                                          prospectFieldOption.value === csvUploadFields.csvHeaderMappings[header]
+                                      ) || ""
+                                    }
                                     renderInput={(params) => <TextField {...params} label="Prospect Field" />}
-                                    options={prospectFields.map(
-                                      (prospectField) => {
-                                        return {
-                                          header: header,
-                                          value:prospectField.fieldName,
-                                          label:prospectField.required ? (
-                                                    `${prospectField.displayName}*`
-                                                  ) :(
-                                                    prospectField.displayName
-                                                  )
-                                        };
-                                      }
-                                    )}
-                                    isOptionEqualToValue={(option, value) => option.value === value.value}
+                                    options={prospectFieldsOptions}                                    
+                                    isOptionEqualToValue={
+                                      (option, value) => {
+                                        return option.value === value.value;
+                                      } 
+                                    }
                                     {...register(`${header}`)}
-                                    onChange={handleFieldMapChange}
-                                    // isSearchable={true} 
-                            >
-                                   {/* <option key={prospectFields.length} value=""></option>
-                                {prospectFields.map((prospectField, index) => (
-                                    <>
-                                        <option key={index} value={prospectField.fieldName}>
-                                            {
-                                                prospectField.required ? (
-                                                    `${prospectField.displayName}*`
-                                                ) :(
-                                                    prospectField.displayName
-                                                )
-                                            }
-                                        </option>
-                                    </>     
-                                ))} */}
-                            </Autocomplete>     
+                                    onChange={(e, v) => handleFieldMapChange(e,v,header)} 
+                            />     
                         </div>
                     </div>
                 </>
