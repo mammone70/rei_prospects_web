@@ -130,7 +130,10 @@ export default function CSVUploadForm() {
               console.log(err);
           }
       };
+      fetchFieldMap();
+    }, []);
 
+    useEffect(() => {
       const fetchLists = async () => {
         setLoading(true);
         try {
@@ -153,7 +156,10 @@ export default function CSVUploadForm() {
             console.log(err);
         }
     };
+    fetchLists();
+  }, []);
 
+  useEffect(() => {
     const fetchTags = async () => {
         setLoading(true);
         try {
@@ -176,13 +182,8 @@ export default function CSVUploadForm() {
             console.log(err);
         }
     };
-    //TODO cache this?
-    fetchFieldMap();
-    fetchLists();
     fetchTags();  
-  
   }, []);
-
 
   const nextButtonDisabledCheck = () => {
     if (currentStep === steps.length - 1) return true; 
@@ -336,16 +337,8 @@ export default function CSVUploadForm() {
       }
     );
 
-    // checkAllRequiredFieldsMapped(e, v);
+    checkAllRequiredFieldsMapped();
     nextButtonDisabledCheck();
-  }
-
-  // const ensureUniqueFieldMap = (e, v) => {
-  const ensureUniqueFieldMap = (headerSelectName, prospectField) => {  
-    // let destinationField = v;
-    // let targetHeaderMappingName = e.target.name; 
-  
-    
   }
 
   const checkAllRequiredFieldsMapped = () => {
