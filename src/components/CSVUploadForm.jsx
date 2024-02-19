@@ -65,24 +65,24 @@ const [requiredProspectFields, setRequiredProspectFields] = useState([]);
 
   const fileReader = new FileReader();
   const handleFileChange = (e) => {
-    // console.log(e.target.files[0]);
+    // formHook.setValue("fileName", e.target.files);
     const file = e.target.files[0];
     
     if (file) {
-        fileReader.onload = function (event) {
-            const text = event.target.result;
-            
-            setCsvHeaders(text.slice(0, text.indexOf("\n")).split(","));
-            
-            // checkUploadButtonDisabled();
-            // next();
-        }
+      fileReader.onload = function (event) {
+          const text = event.target.result;
+          
+          setCsvHeaders(text.slice(0, text.indexOf("\n")).split(","));
+          
+          // checkUploadButtonDisabled();
+          // next();
+      }
 
-        fileReader.onerror = function (event) {
-            toast.error("Unable to load .csv file headers.");
-        };
+      fileReader.onerror = function (event) {
+          toast.error("Unable to load .csv file headers.");
+      };
 
-        fileReader.readAsText(file);
+      fileReader.readAsText(file);
     }
   }
 

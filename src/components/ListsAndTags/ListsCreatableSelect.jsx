@@ -12,21 +12,27 @@ export default function ListsCreatableSelect( {formHook} ) {
         const fetchLists = async () => {
           setLoading(true);
           try {
-              const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/ProspectLists`, 
-                  {
-                      method: "GET",
-                      headers: {
-                          Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-              });
-              const result = await res.json();
-              if (!result.error) {
-                  setProspectLists(result.data);
-                  setLoading(false);
-              } else {
-                  console.log(result);
-                  setLoading(false);
-              }
+                const queryString = new URLSearchParams({
+                    limit: 1000,
+                }).toString();
+
+                const res = await fetch(
+                    `${process.env.REACT_APP_API_SERVER_URL}/ProspectLists?${queryString}`, 
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                    
+                });
+                const result = await res.json();
+                if (!result.error) {
+                    setProspectLists(result.data);
+                    setLoading(false);
+                } else {
+                    console.log(result);
+                    setLoading(false);
+                }
           } catch (err) {
               console.log(err);
           }
@@ -35,6 +41,7 @@ export default function ListsCreatableSelect( {formHook} ) {
     }, []);
   
     const handleCreateList = async (newList) => {
+        newList = newList.toUpperCase();
         const res = await fetch(
             `${process.env.REACT_APP_API_SERVER_URL}/ProspectLists`, {
             method: 'POST',
@@ -75,12 +82,12 @@ export default function ListsCreatableSelect( {formHook} ) {
                             isMulti
                             name='lists'
                             options={prospectLists.map(
-                            prospectList => {
-                                return {
-                                    value:prospectList._id,
-                                    label:prospectList.name,
-                                };
-                            }
+                                prospectList => {
+                                    return {
+                                        value:prospectList._id,
+                                        label:prospectList.name,
+                                    };
+                                }
                             )}
                             closeMenuOnScroll={false}
                             closeMenuOnSelect={true}

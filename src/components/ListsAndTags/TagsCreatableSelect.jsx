@@ -10,14 +10,20 @@ export default function TagsCreatableSelect({formHook}) {
 
     useEffect(() => {
         const fetchTags = async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/ProspectTags`, 
+          setLoading(true);
+          try {
+                const queryString = new URLSearchParams({
+                    limit: 1000,
+                }).toString();
+
+                const res = await fetch(
+                    `${process.env.REACT_APP_API_SERVER_URL}/ProspectTags?${queryString}`, 
                 {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
+                    
                 });
                 const result = await res.json();
                 if (!result.error) {
@@ -27,14 +33,15 @@ export default function TagsCreatableSelect({formHook}) {
                     console.log(result);
                     setLoading(false);
                 }
-            } catch (err) {
-                console.log(err);
-            }
-        };
-        fetchTags();  
-        }, []);
-        
+          } catch (err) {
+              console.log(err);
+          }
+      };
+      fetchTags();
+    }, []);
+  
     const handleCreateTag = async (newTag) => {
+        newTag = newTag.toUpperCase();
         const res = await fetch(
             `${process.env.REACT_APP_API_SERVER_URL}/ProspectTags`, {
             method: 'POST',

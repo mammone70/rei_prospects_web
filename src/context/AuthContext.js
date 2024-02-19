@@ -63,14 +63,15 @@ export const AuthContextProvider = ({children}) => {
                 body: JSON.stringify({...userData}),    
             });
             const result = await res.json();
-            if(!result?.data.error){
+            console.log(result);
+            if(!result?.error){
                 localStorage.setItem("token", result.data.token);
                 setUser(result.data.user);
                 toast.success(`Logged in ${result.data.user.name}`);
 
                 navigate("/prospects", {replace: true});
             } else {
-                toast.error(result.data.error);
+                toast.error(result.message);
             }
         } catch(err){
             console.log(err);

@@ -56,7 +56,7 @@ export default function CSVUploadNavigation({steps,
                 </svg>
             </button>
             {/* {(csvUploadFields.file) && <p>{csvUploadFields.file.name}</p>} */}
-            {(formHook.getValues('fileName')) && <p>{formHook.getValues('fileName')[0]?.name}</p>}
+            {(formHook.getValues('csvFile')) && <p>{formHook.getValues('csvFile')[0]?.name}</p>}
             <button 
                 type="button" 
                 className='btn btn-outline-primary px-2 py-1'

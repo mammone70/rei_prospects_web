@@ -1,8 +1,7 @@
 import React from 'react'
 
 
-export default function CSVUploadFileSelect({formHook,
-                                            onFileChange}) {
+export default function CSVUploadFileSelect({formHook, onFileChange}) {
     
     return (
         <>
@@ -24,11 +23,10 @@ export default function CSVUploadFileSelect({formHook,
                     <div className='mt-2'>
                         <input
                             type='file'
-                            id='fileName'
+                            id='csvFile'
                             accept=".csv"
                             {
-                                ...formHook.register(
-                                'fileName',
+                                ...formHook.register('csvFile',
                                 {
                                     required: true
                                 }
