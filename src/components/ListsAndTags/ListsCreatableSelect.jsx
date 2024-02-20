@@ -3,7 +3,7 @@ import CreatableSelect from 'react-select/creatable';
 import Spinner from '../Spinner';
 import ToastContext from '../../context/ToastContext';
 
-export default function ListsCreatableSelect( {formHook} ) {
+export default function ListsCreatableSelect( {formHook, currentLists, handleChangeLists} ) {
     const {toast} = useContext(ToastContext);
     const [prospectLists, setProspectLists] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export default function ListsCreatableSelect( {formHook} ) {
                 const queryString = new URLSearchParams({
                     limit: 1000,
                 }).toString();
-
+                
                 const res = await fetch(
                     `${process.env.REACT_APP_API_SERVER_URL}/ProspectLists?${queryString}`, 
                 {
@@ -60,12 +60,7 @@ export default function ListsCreatableSelect( {formHook} ) {
             toast.error(result.error);
         }
     };
-      
-    const handleChangeLists = (newValue, actionMeta) => {
-        console.log(formHook)
-        formHook.setValue('lists',newValue);
-    };
-
+    
     return (
         <>
             {loading ? (
@@ -80,6 +75,14 @@ export default function ListsCreatableSelect( {formHook} ) {
                     <div className="md:w-6/12 text-black">
                         <CreatableSelect
                             isMulti
+                            defaultValue={currentLists.map(
+                                currentValue => {
+                                    return {
+                                        value:currentValue._id,
+                                        label:currentValue.name
+                                    };
+                                }
+                            )}
                             name='lists'
                             options={prospectLists.map(
                                 prospectList => {

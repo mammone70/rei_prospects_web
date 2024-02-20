@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import CSVUploadFileSelect from './CSVUpload/CSVUploadFileSelect';
 import CSVUploadFieldMapping from './CSVUpload/CSVUploadFieldMapping';
 import ToastContext from '../context/ToastContext'
-import CSVUploadListsTagsContainer from './CSVUpload/CSVUploadListsTagsContainer';
+import CSVUploadListsTagsContainer from './ListsAndTags/ListsTagsContainer';
 
 export default function CSVUploadForm({steps,
                                       currentStep,
@@ -94,6 +94,16 @@ const [requiredProspectFields, setRequiredProspectFields] = useState([]);
     // nextButtonDisabledCheck();
   }
 
+  const handleChangeTags = (newValue, actionMeta) => {
+    console.log(newValue);
+    formHook?.setValue('tags', newValue);
+  };
+    
+  const handleChangeLists = (newValue, actionMeta) => {
+    console.log(newValue);
+    formHook?.setValue('lists',newValue);
+  };
+
   return (
     <form className='mt-12 py-12 overflow-auto'>
         {currentStep === 0 && (
@@ -129,7 +139,11 @@ const [requiredProspectFields, setRequiredProspectFields] = useState([]);
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            <CSVUploadListsTagsContainer formHook={formHook}/>
+            <CSVUploadListsTagsContainer 
+              formHook={formHook}
+              handleChangeTags={handleChangeTags}
+              handleChangeLists={handleChangeLists} 
+            />
           </motion.div>
         )}
       </form>

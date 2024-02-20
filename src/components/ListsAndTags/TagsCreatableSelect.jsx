@@ -3,7 +3,7 @@ import CreatableSelect from 'react-select/creatable';
 import Spinner from '../Spinner';
 import ToastContext from '../../context/ToastContext';
 
-export default function TagsCreatableSelect({formHook}) {
+export default function TagsCreatableSelect({formHook, currentTags, handleChangeTags}) {
     const {toast} = useContext(ToastContext);
     const [prospectTags, setProspectTags] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -61,10 +61,6 @@ export default function TagsCreatableSelect({formHook}) {
         }
     };
 
-    const handleChangeTags = (newValue, actionMeta) => {
-        formHook.setValue('tags',newValue);
-    };
-
     return (
         <>
             {loading ? (
@@ -79,6 +75,14 @@ export default function TagsCreatableSelect({formHook}) {
                     <div className="md:w-6/12 text-black">
                         <CreatableSelect
                             isMulti
+                            defaultValue={currentTags.map(
+                                currentValue => {
+                                    return {
+                                        value:currentValue._id,
+                                        label:currentValue.name
+                                    };
+                                }
+                            )}
                             name="tags"
                             options={prospectTags.map(
                                 prospectTag => {

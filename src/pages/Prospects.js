@@ -77,7 +77,7 @@ const Prospects = () => {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
       
-                que: {
+                query: {
                   limit : 25,
                 },
             });
@@ -123,7 +123,7 @@ const Prospects = () => {
         event.preventDefault();
     
         const newSearchProspects = prospects.filter((prospect) =>
-          prospect.propertyFullAddress.toLowerCase().includes(searchInput.toLowerCase())
+          prospect.formattedPropertyAddress.toLowerCase().includes(searchInput.toLowerCase())
         );
         //console.log(newSearchUser);
         setProspects(newSearchProspects);
@@ -166,8 +166,8 @@ const Prospects = () => {
                     <table className="table table-hover">
                       <thead>
                         <tr className="table-primary">
-                          <th scope="col">Property Address</th>
                           <th scope="col">Owner</th>
+                          <th scope="col">Property Address</th>
                           {/* <th scope="col">Link</th> */}
                         </tr>
                       </thead>
