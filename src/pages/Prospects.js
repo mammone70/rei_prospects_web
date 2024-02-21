@@ -134,13 +134,28 @@ const Prospects = () => {
     
       const indexOfLastProspect = currentPage * prospectsPerPage;
       const indexOfFirstProspect = indexOfLastProspect - prospectsPerPage;
-      const currentProspects = prospects.slice(indexOfFirstProspect, indexOfLastProspect);
+      const searchProspects = 
+        prospects
+          .filter(
+            (prospect) => {
+              console.log(prospect);
+              return  searchInput === '' 
+                      ? 
+                        prospect 
+                      : 
+                        prospect.formattedPropertyAddress.toLowerCase().includes(searchInput.toLowerCase())
+                      ||
+                        prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
+                      ||
+                        prospect.ownerLastName.toLowerCase().includes(searchInput.toLowerCase());
+            })
+      const currentPageProspects = searchProspects.slice(indexOfFirstProspect, indexOfLastProspect);
       const paginate = 
         (event, pageNumber) => {
           setCurrentPage(pageNumber);
 
         };
-      const numberOfPages = Math.ceil(prospects.length / prospectsPerPage);
+      const numberOfPages = Math.ceil(searchProspects.length / prospectsPerPage);
       
       return (
         <>                                                                                 
@@ -154,8 +169,8 @@ const Prospects = () => {
               <Spinner splash="Loading Prospects..." />
             ) : (
               <>
-                {prospects.length === 0 ? (
-                  <h3>No prospects created yet</h3>
+                {searchProspects.length === 0 ? (
+                  <h3>No Prospects!</h3>
                 ) : (
                   <>
                     <form className="d-flex" onSubmit={handleSearchSubmit}>
@@ -168,14 +183,14 @@ const Prospects = () => {
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                       />
-                      <button type="submit" className="btn btn-info mx-2">
+                      {/* <button type="submit" className="btn btn-info mx-2">
                         Search
-                      </button>
+                      </button> */}
                     </form>
 
                     <div className="d-flex justify-between align-middle padding:30px;">
                       <p>
-                        Total Prospects: <strong>{currentProspects.length}</strong>
+                        Total Prospects: <strong>{searchProspects.length}</strong>
                       </p>
                       <Pagination 
                         count={numberOfPages} 
@@ -197,54 +212,42 @@ const Prospects = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentProspects
-                          .filter(
-                            (prospect) => {
-                              return  searchInput === '' 
-                                      ? 
-                                        prospect 
-                                      : 
-                                        prospect.formattedPropertyAddress.toLowerCase().includes(searchInput.toLowerCase())
-                                      ||
-                                        prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
-                                      ||
-                                        prospect.ownerLastName.toLowerCase().includes(searchInput.toLowerCase());
-                            })
-                            .map((prospect, index) => (
-                              <tr
-                                key={prospect._id}
-                                className={
-                                    index % 2 === 0 ? 
-                                    "table-dark" :
-                                    "table-light"
-                                }
-                              >
-                                <th scope="row"
-                                  onClick={() => {
-                                  setModalData({});
-                                  setModalData(prospect);
-                                  setShowModal(true);
-                                }}>
-                                  {prospect.ownerFirstName} {prospect.ownerLastName}
-                                </th>
-                                <td
-                                  onClick={() => {
-                                  setModalData({});
-                                  setModalData(prospect);
-                                  setShowModal(true);
-                                }}>
-                                  {prospect.propertyAddress} {prospect.propertyCity}, {prospect.propertyState} {prospect.propertyZipcode}
-                                </td>
-                                {/* <td>
-                                  <a 
-                                    href={prospectInfoLinkTemplate + prospect._id}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <img src="./link.png" alt="Link"/>
-                                  </a>
-                                </td> */}
-                              </tr>
+                        {currentPageProspects
+                          .map((prospect, index) => (
+                            <tr
+                              key={prospect._id}
+                              className={
+                                  index % 2 === 0 ? 
+                                  "table-dark" :
+                                  "table-light"
+                              }
+                            >
+                              <th scope="row"
+                                onClick={() => {
+                                setModalData({});
+                                setModalData(prospect);
+                                setShowModal(true);
+                              }}>
+                                {prospect.ownerFirstName} {prospect.ownerLastName}
+                              </th>
+                              <td
+                                onClick={() => {
+                                setModalData({});
+                                setModalData(prospect);
+                                setShowModal(true);
+                              }}>
+                                {prospect.propertyAddress} {prospect.propertyCity}, {prospect.propertyState} {prospect.propertyZipcode}
+                              </td>
+                              {/* <td>
+                                <a 
+                                  href={prospectInfoLinkTemplate + prospect._id}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <img src="./link.png" alt="Link"/>
+                                </a>
+                              </td> */}
+                            </tr>
                         ))}
                       </tbody>
                     </table>
