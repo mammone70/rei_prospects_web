@@ -138,12 +138,11 @@ const Prospects = () => {
         prospects
           .filter(
             (prospect) => {
-              console.log(prospect);
               return  searchInput === '' 
                       ? 
                         prospect 
                       : 
-                        prospect.formattedPropertyAddress.toLowerCase().includes(searchInput.toLowerCase())
+                        prospect.formattedPropertyAddress?.toLowerCase().includes(searchInput.toLowerCase())
                       ||
                         prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
                       ||
@@ -169,25 +168,25 @@ const Prospects = () => {
               <Spinner splash="Loading Prospects..." />
             ) : (
               <>
+                <form className="d-flex" onSubmit={handleSearchSubmit}>
+                  <input
+                    type="text"
+                    name="searchInput"
+                    id="searchInput"
+                    className="form-control my-2"
+                    placeholder="Search Prospect"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                  />
+                  {/* <button type="submit" className="btn btn-info mx-2">
+                    Search
+                  </button> */}
+                </form>
+
                 {searchProspects.length === 0 ? (
                   <h3>No Prospects!</h3>
                 ) : (
                   <>
-                    <form className="d-flex" onSubmit={handleSearchSubmit}>
-                      <input
-                        type="text"
-                        name="searchInput"
-                        id="searchInput"
-                        className="form-control my-2"
-                        placeholder="Search Prospect"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                      />
-                      {/* <button type="submit" className="btn btn-info mx-2">
-                        Search
-                      </button> */}
-                    </form>
-
                     <div className="d-flex justify-between align-middle padding:30px;">
                       <p>
                         Total Prospects: <strong>{searchProspects.length}</strong>
@@ -198,6 +197,8 @@ const Prospects = () => {
                         onChange={paginate}
                         showFirstButton 
                         showLastButton
+                        siblingCount={2}
+                        boundaryCount={2}
                         color="primary"
                         sx={{button:{color: '#ffffff'}}}
                         size="large"
