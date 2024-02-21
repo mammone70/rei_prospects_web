@@ -7,6 +7,7 @@ import ModalTitle from 'react-bootstrap/ModalTitle'
 import { Link } from "react-router-dom";
 import Spinner from "../components/Spinner";
 import ToastContext from "../context/ToastContext";
+import { Pagination } from "@mui/material";
 
 const Prospects = () => {
     const { toast } = useContext(ToastContext);
@@ -16,6 +17,8 @@ const Prospects = () => {
     const [modalData, setModalData] = useState({});
     const [prospects, setProspects] = useState([]);
     const [searchInput, setSearchInput] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [prospectsPerPage, setProspectsPerPage] = useState(25);
 
     const prospectFields = [
         {
@@ -68,19 +71,19 @@ const Prospects = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-            const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects?${new URLSearchParams({
-                limit: 25
-              })}`, 
+            // const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects?${new URLSearchParams({
+            //     limit: 25
+            //   })}`,
+              const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects`,   
               {
                 method: "GET",
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-      
-                query: {
-                  limit : 25,
-                },
-            });
+                // query: {
+                //   limit : 25,
+                // },
+              });
             const result = await res.json();
             if (!result.error) {
                 setProspects(result.data);
@@ -129,6 +132,16 @@ const Prospects = () => {
         setProspects(newSearchProspects);
       };
     
+      const indexOfLastProspect = currentPage * prospectsPerPage;
+      const indexOfFirstProspect = indexOfLastProspect - prospectsPerPage;
+      const currentProspects = prospects.slice(indexOfFirstProspect, indexOfLastProspect);
+      const paginate = 
+        (event, pageNumber) => {
+          setCurrentPage(pageNumber);
+
+        };
+      const numberOfPages = Math.ceil(prospects.length / prospectsPerPage);
+      
       return (
         <>                                                                                 
           <div>
@@ -159,10 +172,22 @@ const Prospects = () => {
                         Search
                       </button>
                     </form>
-    
-                    <p>
-                      Total Prospects: <strong>{prospects.length}</strong>
-                    </p>
+
+                    <div className="d-flex justify-between align-middle padding:30px;">
+                      <p>
+                        Total Prospects: <strong>{currentProspects.length}</strong>
+                      </p>
+                      <Pagination 
+                        count={numberOfPages} 
+                        page={currentPage}
+                        onChange={paginate}
+                        showFirstButton 
+                        showLastButton
+                        color="primary"
+                        sx={{button:{color: '#ffffff'}}}
+                        size="large"
+                      />
+                    </div>
                     <table className="table table-hover">
                       <thead>
                         <tr className="table-primary">
@@ -172,41 +197,54 @@ const Prospects = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {prospects.map((prospect, index) => (
-                          <tr
-                            key={prospect._id}
-                            className={
-                                index % 2 === 0 ? 
-                                "table-dark" :
-                                "table-light"
-                            }
-                          >
-                            <th scope="row"
-                              onClick={() => {
-                              setModalData({});
-                              setModalData(prospect);
-                              setShowModal(true);
-                            }}>
-                              {prospect.ownerFirstName} {prospect.ownerLastName}
-                            </th>
-                            <td
-                              onClick={() => {
-                              setModalData({});
-                              setModalData(prospect);
-                              setShowModal(true);
-                            }}>
-                              {prospect.propertyAddress} {prospect.propertyCity}, {prospect.propertyState} {prospect.propertyZipcode}
-                            </td>
-                            {/* <td>
-                              <a 
-                                href={prospectInfoLinkTemplate + prospect._id}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                        {currentProspects
+                          .filter(
+                            (prospect) => {
+                              return  searchInput === '' 
+                                      ? 
+                                        prospect 
+                                      : 
+                                        prospect.formattedPropertyAddress.toLowerCase().includes(searchInput.toLowerCase())
+                                      ||
+                                        prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
+                                      ||
+                                        prospect.ownerLastName.toLowerCase().includes(searchInput.toLowerCase());
+                            })
+                            .map((prospect, index) => (
+                              <tr
+                                key={prospect._id}
+                                className={
+                                    index % 2 === 0 ? 
+                                    "table-dark" :
+                                    "table-light"
+                                }
                               >
-                                <img src="./link.png" alt="Link"/>
-                              </a>
-                            </td> */}
-                          </tr>
+                                <th scope="row"
+                                  onClick={() => {
+                                  setModalData({});
+                                  setModalData(prospect);
+                                  setShowModal(true);
+                                }}>
+                                  {prospect.ownerFirstName} {prospect.ownerLastName}
+                                </th>
+                                <td
+                                  onClick={() => {
+                                  setModalData({});
+                                  setModalData(prospect);
+                                  setShowModal(true);
+                                }}>
+                                  {prospect.propertyAddress} {prospect.propertyCity}, {prospect.propertyState} {prospect.propertyZipcode}
+                                </td>
+                                {/* <td>
+                                  <a 
+                                    href={prospectInfoLinkTemplate + prospect._id}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <img src="./link.png" alt="Link"/>
+                                  </a>
+                                </td> */}
+                              </tr>
                         ))}
                       </tbody>
                     </table>
