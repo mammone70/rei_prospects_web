@@ -8,17 +8,28 @@ import { Link } from "react-router-dom";
 import Spinner from "../components/Spinner";
 import ToastContext from "../context/ToastContext";
 import { Pagination } from "@mui/material";
+import ProspectFilter from "../components/ProspectFilter";
 
 const Prospects = () => {
     const { toast } = useContext(ToastContext);
 
-    const [showModal, setShowModal] = useState(false);
+    const [showProspectModal, setShowProspectModal] = useState(false);
+    const [showFilterModal, setShowFilterModal] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [modalData, setModalData] = useState({});
+    const [prospectModalData, setProspectModalData] = useState({});
     const [prospects, setProspects] = useState([]);
     const [searchInput, setSearchInput] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [prospectsPerPage, setProspectsPerPage] = useState(25);
+    
+    const [filterProps, setFilterProps] = useState({
+      lists:[],
+      tags:[],
+      minListCount: 0,
+      maxListCount: "",
+      minTagCount: 0,
+      maxTagCount: "",
+    });
 
     const prospectFields = [
         {
@@ -112,7 +123,7 @@ const Prospects = () => {
             if (!result.error) {
               setProspects(result.prospects);
               toast.success("Deleted prospect");
-              setShowModal(false);
+              setShowProspectModal(false);
             } else {
               toast.error(result.error);
             }
@@ -156,6 +167,25 @@ const Prospects = () => {
         };
       const numberOfPages = Math.ceil(searchProspects.length / prospectsPerPage);
       
+      const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        console.log(name + "," + value);
+        setFilterProps({ ...filterProps, [name]: value });
+      };
+
+      const handleChangeTags = async (newValue, actionMeta) => {
+        setFilterProps({ ...filterProps, tags: newValue });
+      };
+
+      const handleChangeLists = async (newValue, actionMeta) => {
+        setFilterProps({ ...filterProps, lists: newValue });
+      };
+
+      const handleFilterSubmit = (event) => {
+        event.preventDefault();
+        console.log(filterProps);
+      }
+
       return (
         <>                                                                                 
           <div>
@@ -187,21 +217,30 @@ const Prospects = () => {
                   <h3>No Prospects!</h3>
                 ) : (
                   <>
-                    <div className="d-flex justify-between align-middle padding:30px;">
+                    <div>
                       <p>
                         Total Prospects: <strong>{searchProspects.length}</strong>
                       </p>
+                      <button 
+                        type="button" 
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setShowFilterModal(true);             
+                        }}
+                      >
+                        Filter
+                      </button>
                       <Pagination 
                         count={numberOfPages} 
                         page={currentPage}
                         onChange={paginate}
                         showFirstButton 
                         showLastButton
-                        siblingCount={2}
-                        boundaryCount={2}
+                        // siblingCount={2}
+                        // boundaryCount={2}
                         color="primary"
                         sx={{button:{color: '#ffffff'}}}
-                        size="large"
+                        // size="large"
                       />
                     </div>
                     <table className="table table-hover">
@@ -225,17 +264,17 @@ const Prospects = () => {
                             >
                               <th scope="row"
                                 onClick={() => {
-                                setModalData({});
-                                setModalData(prospect);
-                                setShowModal(true);
+                                setProspectModalData({});
+                                setProspectModalData(prospect);
+                                setShowProspectModal(true);
                               }}>
                                 {prospect.ownerFirstName} {prospect.ownerLastName}
                               </th>
                               <td
                                 onClick={() => {
-                                setModalData({});
-                                setModalData(prospect);
-                                setShowModal(true);
+                                setProspectModalData({});
+                                setProspectModalData(prospect);
+                                setShowProspectModal(true);             
                               }}>
                                 {prospect.propertyAddress} {prospect.propertyCity}, {prospect.propertyState} {prospect.propertyZipcode}
                               </td>
@@ -257,14 +296,16 @@ const Prospects = () => {
               </>
             )}
           </div>
-          <Modal size="l" show={showModal} onHide={() => setShowModal(false)}>
+
+          {/* Prospect Modal */}
+          <Modal size="l" show={showProspectModal} onHide={() => setShowProspectModal(false)}>
             <ModalHeader closeButton>
-              <ModalTitle>{modalData.propertyFullAddress}</ModalTitle>
+              <ModalTitle>{prospectModalData.propertyFullAddress}</ModalTitle>
             </ModalHeader>
         
             <ModalBody>
               <div>
-                <h3>{modalData.ownerFullName}</h3>
+                <h3>{prospectModalData.ownerFullName}</h3>
                 <div style={{height:'350px', overflow:'auto'}}>
                   <table className="table table-hover">
                         <tbody>
@@ -278,7 +319,7 @@ const Prospects = () => {
                                     }
                                 >
                                     <td>{prospectField.fieldLabel}</td>
-                                    <td>{modalData[prospectField.fieldName]}</td>
+                                    <td>{prospectModalData[prospectField.fieldName]}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -288,18 +329,54 @@ const Prospects = () => {
             </ModalBody>
     
             <ModalFooter>
-              <Link className="btn btn-info" to={`/edit/${modalData._id}`}>
+              <Link className="btn btn-info" to={`/edit/${prospectModalData._id}`}>
                 Edit
               </Link>
               <button
                 className="btn btn-danger"
-                onClick={() => deleteProspect(modalData._id)}
+                onClick={() => deleteProspect(prospectModalData._id)}
               >
                 Delete
               </button>
               <button
                 className="btn btn-warning"
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowProspectModal(false)}
+              >
+                Close
+              </button>
+            </ModalFooter>
+          </Modal>
+
+          {/* Filter Modal */}
+          <Modal size="l" show={showFilterModal} onHide={() => setShowFilterModal(false)}>
+            <ModalHeader closeButton>
+              <ModalTitle>Filter Prospects</ModalTitle>
+            </ModalHeader>
+        
+            <ModalBody>
+              <div>
+                <form onSubmit={handleFilterSubmit}>
+                  <ProspectFilter
+                    filterProps={filterProps}
+                    onListCountInputChange={handleInputChange}
+                    onTagCountInputChange={handleInputChange}
+                    onChangeLists={handleChangeLists}
+                    onChangeTags={handleChangeTags}
+                  />
+                  <button
+                    className="btn btn-info"
+                    type="submit"
+                  >
+                    Filter
+                  </button>
+                </form>
+              </div>
+            </ModalBody>
+    
+            <ModalFooter>
+              <button
+                className="btn btn-warning"
+                onClick={() => setShowFilterModal(false)}
               >
                 Close
               </button>

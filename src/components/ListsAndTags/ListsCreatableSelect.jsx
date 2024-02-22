@@ -75,7 +75,7 @@ export default function ListsCreatableSelect( {formHook, currentLists, handleCha
                     <div className="md:w-6/12 text-black">
                         <CreatableSelect
                             isMulti
-                            defaultValue={currentLists.map(
+                            defaultValue={currentLists?.map(
                                 currentValue => {
                                     return {
                                         value:currentValue._id,

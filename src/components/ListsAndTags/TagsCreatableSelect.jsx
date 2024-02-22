@@ -75,7 +75,7 @@ export default function TagsCreatableSelect({formHook, currentTags, handleChange
                     <div className="md:w-6/12 text-black">
                         <CreatableSelect
                             isMulti
-                            defaultValue={currentTags.map(
+                            defaultValue={currentTags?.map(
                                 currentValue => {
                                     return {
                                         value:currentValue._id,
