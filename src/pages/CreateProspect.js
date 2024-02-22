@@ -29,12 +29,12 @@ const CreateProspect = () => {
         event.preventDefault();
 
         const res = await fetch(
-                `${process.env.REACT_APP_API_SERVER_URL}/Prospect`, {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
-                }, 
+            `${process.env.REACT_APP_API_SERVER_URL}/Prospect`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            }, 
             body: JSON.stringify(prospectDetails),
         });
 

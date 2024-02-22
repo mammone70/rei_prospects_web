@@ -77,7 +77,6 @@ export default function TagsCreatableSelect({formHook, currentTags, handleChange
                             isMulti
                             defaultValue={currentTags?.map(
                                 currentValue => {
-                                    console.log(currentValue);
                                     return {
                                         value:currentValue._id,
                                         label:currentValue.name

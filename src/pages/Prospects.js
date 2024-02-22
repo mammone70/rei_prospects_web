@@ -30,7 +30,6 @@ const Prospects = () => {
       minTagCount: 0,
       maxTagCount: "",
     });
-    const [filterQuery, setFilterQuery] = useState({});
 
     const prospectFields = [
         {
@@ -83,16 +82,15 @@ const Prospects = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-            // const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects?${new URLSearchParams({
-            //     limit: 25
-            //   })}`,
+              // const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects?${new URLSearchParams({
+              //   query: JSON.stringify(filterQuery)
+              // })}`,
               const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects`,   
               {
                 method: "GET",
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                query: JSON.stringify(filterQuery)
               });
             const result = await res.json();
             if (!result.error) {
@@ -107,7 +105,7 @@ const Prospects = () => {
             }
         };
         fetchData();
-      }, [filterQuery]);
+      }, []);
     
       const deleteProspect = async (id) => {
         if (window.confirm("Are you sure you want to delete this prospect?")) {
@@ -149,16 +147,14 @@ const Prospects = () => {
           .filter(
             (prospect) => {
               return  searchInput === '' 
-                      ? 
-                        prospect 
-                      : 
-                        prospect.formattedPropertyAddress?.toLowerCase().includes(searchInput.toLowerCase())
-                      ||
-                        prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
-                      ||
-                        prospect.ownerLastName.toLowerCase().includes(searchInput.toLowerCase());
+                      ? prospect 
+                      : prospect.formattedPropertyAddress?.toLowerCase().includes(searchInput.toLowerCase())
+                      ||prospect.ownerFirstName.toLowerCase().includes(searchInput.toLowerCase())
+                      ||prospect.ownerLastName.toLowerCase().includes(searchInput.toLowerCase());
             })
+
       const currentPageProspects = searchProspects.slice(indexOfFirstProspect, indexOfLastProspect);
+      
       const paginate = 
         (event, pageNumber) => {
           setCurrentPage(pageNumber);
@@ -205,27 +201,39 @@ const Prospects = () => {
       //build JSON query based on Filter
       const handleFilterSubmit = async (event) => {
         event.preventDefault();
-        console.log(filterProps);
         
-        const newFilterQuery = {};
-        if(filterProps.lists){
-          //extract out ids only
-          newFilterQuery["lists"] = 
-            {
-              $in: filterProps.lists.map((list) => {return list.value})
-            };
-        }
+        setLoading(true);
+        try {
+          const res = await fetch(`${process.env.REACT_APP_API_SERVER_URL}/Prospects/Filter`,   
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              ...filterProps,
+              //strip out everything but list and tag ids
+              lists: filterProps.lists.length !== 0 
+                    ? filterProps.lists.map((list) => {return list._id}) 
+                    : [],  
+              tags: filterProps.tags.length !== 0
+                    ? filterProps.tags.map((tag) => {return tag._id}) 
+                    : [],  
+            }),
+          });
 
-        if(filterProps.tags){
-          //extract out ids only
-          newFilterQuery["tags"] = 
-            {
-              $in: filterProps.tags.map((tag) => {return tag.value})
-            };
+          const result = await res.json();
+          if (!result.error) {
+              setProspects(result.data);
+              setLoading(false);
+          } else {
+              console.log(result);
+              setLoading(false);
           }
-
-        
-        console.log(JSON.stringify(newFilterQuery));
+        } catch (err) {
+        console.log(err);
+        }        
       }
 
       return (
