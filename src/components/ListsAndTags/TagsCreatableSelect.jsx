@@ -77,6 +77,7 @@ export default function TagsCreatableSelect({formHook, currentTags, handleChange
                             isMulti
                             defaultValue={currentTags?.map(
                                 currentValue => {
+                                    console.log(currentValue);
                                     return {
                                         value:currentValue._id,
                                         label:currentValue.name
@@ -86,10 +87,10 @@ export default function TagsCreatableSelect({formHook, currentTags, handleChange
                             name="tags"
                             options={prospectTags.map(
                                 prospectTag => {
-                                return {
-                                    value:prospectTag._id,
-                                    label:prospectTag.name,
-                                };
+                                    return {
+                                        value:prospectTag._id,
+                                        label:prospectTag.name,
+                                    };
                                 }
                             )}
                             closeMenuOnScroll={false}

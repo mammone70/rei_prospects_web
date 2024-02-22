@@ -30,6 +30,7 @@ const Prospects = () => {
       minTagCount: 0,
       maxTagCount: "",
     });
+    const [filterQuery, setFilterQuery] = useState({});
 
     const prospectFields = [
         {
@@ -91,9 +92,7 @@ const Prospects = () => {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                // query: {
-                //   limit : 25,
-                // },
+                query: JSON.stringify(filterQuery)
               });
             const result = await res.json();
             if (!result.error) {
@@ -108,7 +107,7 @@ const Prospects = () => {
             }
         };
         fetchData();
-      }, []);
+      }, [filterQuery]);
     
       const deleteProspect = async (id) => {
         if (window.confirm("Are you sure you want to delete this prospect?")) {
@@ -174,16 +173,59 @@ const Prospects = () => {
       };
 
       const handleChangeTags = async (newValue, actionMeta) => {
-        setFilterProps({ ...filterProps, tags: newValue });
+        setFilterProps(
+          { 
+            ...filterProps, 
+            tags: newValue.map(
+                    tagOption => {
+                        return {
+                            _id:tagOption.value,
+                            name:tagOption.label,
+                        };
+                    }
+                )}
+        );
       };
 
       const handleChangeLists = async (newValue, actionMeta) => {
-        setFilterProps({ ...filterProps, lists: newValue });
+        setFilterProps(
+          { 
+            ...filterProps, 
+            lists: newValue.map(
+                    listOption => {
+                        return {
+                            _id:listOption.value,
+                            name:listOption.label,
+                        };
+                    }
+                )}
+        );      
       };
 
-      const handleFilterSubmit = (event) => {
+      //build JSON query based on Filter
+      const handleFilterSubmit = async (event) => {
         event.preventDefault();
         console.log(filterProps);
+        
+        const newFilterQuery = {};
+        if(filterProps.lists){
+          //extract out ids only
+          newFilterQuery["lists"] = 
+            {
+              $in: filterProps.lists.map((list) => {return list.value})
+            };
+        }
+
+        if(filterProps.tags){
+          //extract out ids only
+          newFilterQuery["tags"] = 
+            {
+              $in: filterProps.tags.map((tag) => {return tag.value})
+            };
+          }
+
+        
+        console.log(JSON.stringify(newFilterQuery));
       }
 
       return (

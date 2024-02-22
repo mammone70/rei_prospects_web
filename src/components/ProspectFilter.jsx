@@ -14,7 +14,7 @@ function ProspectFilter(
   return (
     <>
         <ListsTagsContainer 
-          currentLists={filterProps.list}
+          currentLists={filterProps.lists}
           currentTags={filterProps.tags}
           handleChangeLists={onChangeLists}
           handleChangeTags={onChangeTags}
