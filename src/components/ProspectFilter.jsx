@@ -2,6 +2,7 @@ import React from 'react'
 import ListsTagsContainer from './ListsAndTags/ListsTagsContainer'
 import ListCountInput from './ListsAndTags/ListCountInput'
 import TagCountInput from './ListsAndTags/TagCountInput'
+import ListAndTagSearchType from './ListsAndTags/ListAndTagSearchType'
 
 function ProspectFilter(
     {
@@ -9,6 +10,8 @@ function ProspectFilter(
       onListCountInputChange,
       onTagCountInputChange,
       onChangeLists,
+      onListSearchTypeInputChange,
+      onTagSearchTypeInputChange,
       onChangeTags
     }) {
   return (
@@ -18,6 +21,10 @@ function ProspectFilter(
           currentTags={filterProps.tags}
           handleChangeLists={onChangeLists}
           handleChangeTags={onChangeTags}
+        />
+        <ListAndTagSearchType 
+          onListSearchTypeInputChange={onListSearchTypeInputChange}
+          onTagSearchTypeInputChange={onTagSearchTypeInputChange}
         />
         <ListCountInput 
           minListCount={filterProps.minListCount}

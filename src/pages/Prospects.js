@@ -409,6 +409,8 @@ const Prospects = () => {
                     filterProps={filterProps}
                     onListCountInputChange={handleInputChange}
                     onTagCountInputChange={handleInputChange}
+                    onListSearchTypeInputChange={handleInputChange}
+                    onTagSearchTypeInputChange={handleInputChange}
                     onChangeLists={handleChangeLists}
                     onChangeTags={handleChangeTags}
                   />
